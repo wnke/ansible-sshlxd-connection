@@ -1,60 +1,63 @@
 # ansible-sshlxd-connection
 
-An Ansible 2.0 connection plugin that allows you to access LXD
-containers remotely through SSH.
+Use the ssh client library to access the LXD host and then use lxc commands to interact with the container.
 
-The `sshlxd` plugin uses SSH, `sudo` and `lxc exec` (along with `lxc
-file pull` and `lxc file push`) on the remote host to run ansible
-plays on an LXD container running on a remote host. It's really useful
-if you have a Mac and want to provision a Linux server with containers
-on it (otherwise you could just use any old LXD connection plugin and
-use remote containers, I guess).
-
-It's tested with Ansible 2.0.1 and the Ubuntu Xenial (16.04) beta.
+By using the ssh connection, only port ssh port is required to be open. Also no need to configure LXD to allow remote connections. 
 
 ## Requirements
 
 Machine running ansible:
 
-* Ansible 2.0 and its dependencies
+* Ansible 2.5+ and its dependencies
 
 Host:
 
-* Linux
-* LXD, tested with the version Ubuntu Xenial ships with
-* SSH
-* Sudo
-* Ansible 2.0's dependencies (that's probably python 2.7)
+* LXD, tested with the version Ubuntu Xenial(16.04.1)
+* ssh
+* sudo
+* python 2.7
 
 LXD container:
 
-* Ansible 2.0's dependencies (that's probably python 2.7 again)
+* python 2.7
 
 ## Installing
 
-This is a Connection Type Plugin. The installation procedure is simple
-(but you can't do it via Galaxy, sadly): Put (or link) sshlxd.py in
-your ansible playbooks' `connection_plugins/` directory, and add
-Inventory entries, e.g.:
+Add the file sshlxd.py to the `connection_plugins/` directory.
+The path to the `connection_plugins/` directory can be set via `ansibile.cfg` file:
 
 ```
-[db]
-my-db-jail@127.0.0.1 ansible_ssh_port=2222 ansible_connection=sshlxd ansible_ssh_user=vagrant
+[defaults]
+...
+connection_plugins = connection_plugins
+...
 ```
 
-As you can see, the format here is relatively simple - the jail name
-goes in the portion before the @ in the host name, the host name goes
-after. Give SSH parameters with `ansible_ssh_*` params.
+## Using
 
-To give `sshlxd` the privileges it needs to `lxd exec`, you have to
-use `become: true` in the play for the container.
+Add the an entry to the inventory as per the example:
+```
+[container]
+alpine1@127.0.0.1 ansible_ssh_port=22 ansible_connection=sshlxd ansible_ssh_user=ubuntu
+```
 
-In theory, you can also add hosts dynamically via the `add_host`
-module, but I haven't tried this yet.
+The use your plays as usual:
+```
+---
+- hosts: container  
+  tasks:
+  - name: Just checking sshlxd!
+    ping:
+```
+
+To give `sshlxd` the privileges it needs to `lxd exec`, you have to use `become: true` in the play for the container, or add the `ansible_ssh_user` to the LXD group on the remote host.
 
 ## Credit
 
-This plugin owes pretty much everything to
+This version is forked from Andreas Fuchs (@antifuchs) https://github.com/antifuchs/ansible-sshlxd-connection.git , mainly to offer ansible 2.5 compatibility. 
+
+### From the original author Andreas Fuchs (@antifuchs)
+_This plugin owes pretty much everything to
 [ansible-sshjail](https://github.com/austinhyde/ansible-sshjail) - it
 started life as a copy of that code (and still retains most of its
-heritage!). Thanks to @austinhyde for making this!
+heritage!). Thanks to @austinhyde for making this!_
